@@ -53,23 +53,11 @@ class DoG(BaseModel):
             use_gpu = pycolmap.has_cuda and device.type == "cuda"
 
             options = {**self.conf["options"]}
-<<<<<<< ours
-            if self.conf["descriptor"] == "rootsift":
-                options["normalization"] = pycolmap.Normalization.L1_ROOT
-            else:
-                options["normalization"] = pycolmap.Normalization.L2
-            self.sift = pycolmap.Sift(
-                options=pycolmap.FeatureExtractionOptions(
-                    sift=pycolmap.SiftExtractionOptions(options)
-                ),
-                device=getattr(pycolmap.Device, "cuda" if use_gpu else "cpu"),
-=======
 
             options["normalization"] = (
                 pycolmap.Normalization.L1_ROOT
                 if self.conf["descriptor"] == "rootsift"
                 else pycolmap.Normalization.L2
->>>>>>> theirs
             )
 
             extraction_options = pycolmap.FeatureExtractionOptions(
