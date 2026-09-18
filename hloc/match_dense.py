@@ -60,6 +60,13 @@ confs = {
         "max_error": 4,  # max error for assigned keypoints (in px)
         "cell_size": 4,  # size of quantization patch (max 1 kp/patch)
     },
+    "loftr_3259": {
+        "output": "matches-loftr_outdoor",
+        "model": {"name": "loftr", "weights": "outdoor"},
+        "preprocessing": {"grayscale": True, "resize_max": 640, "dfactor": 8},
+        "max_error": 1,  # max error for assigned keypoints (in px)
+        "cell_size": 1,  # size of quantization patch (max 1 kp/patch)
+    }
 }
 
 
@@ -252,6 +259,8 @@ def match_dense(
             image0, image1, scale0, scale1, (name0,), (name1,) = data
             scale0, scale1 = scale0[0].numpy(), scale1[0].numpy()
             image0, image1 = image0.to(device), image1.to(device)
+
+            print("Image shapes: ", image0.shape, image1.shape)
 
             # match semi-dense
             # for consistency with pairs_from_*: refine kpts of image0

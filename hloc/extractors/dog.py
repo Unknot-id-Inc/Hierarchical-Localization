@@ -51,7 +51,9 @@ class DoG(BaseModel):
         if self.sift is None:
             device = self.dummy_param.device
             use_gpu = pycolmap.has_cuda and device.type == "cuda"
+
             options = {**self.conf["options"]}
+<<<<<<< ours
             if self.conf["descriptor"] == "rootsift":
                 options["normalization"] = pycolmap.Normalization.L1_ROOT
             else:
@@ -61,7 +63,27 @@ class DoG(BaseModel):
                     sift=pycolmap.SiftExtractionOptions(options)
                 ),
                 device=getattr(pycolmap.Device, "cuda" if use_gpu else "cpu"),
+=======
+
+            options["normalization"] = (
+                pycolmap.Normalization.L1_ROOT
+                if self.conf["descriptor"] == "rootsift"
+                else pycolmap.Normalization.L2
+>>>>>>> theirs
             )
+
+            extraction_options = pycolmap.FeatureExtractionOptions(
+                sift=pycolmap.SiftExtractionOptions(options)
+            )
+
+            self.sift = pycolmap.Sift(
+                options=extraction_options,
+                device=(
+                    pycolmap.Device.cuda
+                    if use_gpu
+                    else pycolmap.Device.cpu
+                ),
+            )   
 
         keypoints, descriptors = self.sift.extract(image_np)
         scales = keypoints[:, 2]

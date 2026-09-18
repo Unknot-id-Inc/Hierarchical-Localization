@@ -48,6 +48,7 @@ class NetVLAD(BaseModel):
     checkpoint_urls = {
         "VGG16-NetVLAD-Pitts30K": "https://cvg-data.inf.ethz.ch/hloc/netvlad/Pitts30K_struct.mat",  # noqa: E501
         "VGG16-NetVLAD-TokyoTM": "https://cvg-data.inf.ethz.ch/hloc/netvlad/TokyoTM_struct.mat",  # noqa: E501
+        "VGG16-NetVLAD-Pitts30K_small": "https://cvg-data.inf.ethz.ch/hloc/netvlad/Pitts30K_struct.mat",  # noqa: E501
     }
 
     def _init(self, conf):

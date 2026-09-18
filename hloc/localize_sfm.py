@@ -56,7 +56,7 @@ class QueryLocalizer:
         self.config = config or {}
 
     def localize(self, points2D_all, points2D_idxs, points3D_id, query_camera):
-        points2D = points2D_all[points2D_idxs]
+        points2D = points2D_all[points2D_idxs]  ##### TODO: correction this should be -1 but there is other bug in matches -2???
         points3D = [self.reconstruction.points3D[j].xyz for j in points3D_id]
         if points2D.shape[0] == 0:
             return None
@@ -93,12 +93,15 @@ def pose_from_cluster(
         points3D_ids = np.array(
             [p.point3D_id if p.has_point3D() else -1 for p in image.points2D]
         )
-
         matches, _ = get_matches(matches_path, qname, image.name)
+         ##### TODO: correction this should be -1 but there is other bug in matches -2???
+        valid_points = (matches[:, 1] < points3D_ids.shape[0])
+        matches = matches[valid_points]
+        ######
         matches = matches[points3D_ids[matches[:, 1]] != -1]
         num_matches += len(matches)
         for idx, m in matches:
-            id_3D = points3D_ids[m]
+            id_3D = points3D_ids[m]  ##### TODO: correction this should be -1 but there is other bug in matches -2???
             kp_idx_to_3D_to_db[idx][id_3D].append(i)
             # avoid duplicate observations
             if id_3D not in kp_idx_to_3D[idx]:
@@ -107,7 +110,10 @@ def pose_from_cluster(
     idxs = list(kp_idx_to_3D.keys())
     mkp_idxs = [i for i in idxs for _ in kp_idx_to_3D[i]]
     mp3d_ids = [j for i in idxs for j in kp_idx_to_3D[i]]
-    ret = localizer.localize(kpq, mkp_idxs, mp3d_ids, query_camera, **kwargs)
+    if kpq.shape[0] >4  and mp3d_ids:
+        ret = localizer.localize(kpq, mkp_idxs, mp3d_ids, query_camera, **kwargs)
+    else:
+        ret = None
     if ret is not None:
         ret["camera"] = query_camera
 
@@ -138,6 +144,8 @@ def main(
     covisibility_clustering: bool = False,
     prepend_camera_name: bool = False,
     config: Dict = None,
+    inlier_threshold = 0,
+    verbose=True,
 ):
     assert retrieval.exists(), retrieval
     assert features.exists(), features
@@ -162,7 +170,7 @@ def main(
         "loc": {},
     }
     logger.info("Starting localization...")
-    for qname, qcam in tqdm(queries):
+    for qname, qcam in tqdm(queries, disable=not verbose):
         if qname not in retrieval_dict:
             logger.warning(f"No images retrieved for query image {qname}. Skipping...")
             continue
@@ -200,11 +208,20 @@ def main(
             ret, log = pose_from_cluster(
                 localizer, qname, qcam, db_ids, features, matches
             )
+            outliers = ['1734378102617999872.jpg'] #########################################
+            if qname in outliers:
+                # print(f"HERE >>>>>>>>inliers: { ret['num_inliers']} for {qname}")
+                pass
+            if ret is not None and ret['num_inliers'] < inlier_threshold:
+                # print(f"HERE >>>>>>>>UNABLE TO LOCALIZE: {qname}. inliers: { ret['num_inliers']}", "\n")
+                ret = None
             if ret is not None:
                 cam_from_world[qname] = ret["cam_from_world"]
             else:
-                closest = reference_sfm.images[db_ids[0]]
-                cam_from_world[qname] = closest.cam_from_world()
+                pass
+                ######### WHY????
+                # closest = reference_sfm.images[db_ids[0]]
+                # cam_from_world[qname] = closest.cam_from_world
             log["covisibility_clustering"] = covisibility_clustering
             logs["loc"][qname] = log
 
@@ -218,6 +235,8 @@ def main(
     with open(logs_path, "wb") as f:
         pickle.dump(logs, f)
     logger.info("Done!")
+
+    return ret, log
 
 
 if __name__ == "__main__":
